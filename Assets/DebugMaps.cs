@@ -14,6 +14,12 @@ public class DebugMaps : MonoBehaviour {
             target.Create();
         }
 
+        int kernel = mapGenerator.FindKernel("CSMain");
+        mapGenerator.SetTexture(kernel, "Result", target);
+        int threadGroupsX = Mathf.CeilToInt(target.width / 8.0f);
+        int threadGroupsY = Mathf.CeilToInt(target.height / 8.0f);
+        mapGenerator.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
+        
         Graphics.Blit(target, destination);
     }
 }
