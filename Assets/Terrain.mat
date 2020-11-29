@@ -70,6 +70,7 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _TessellationEdgeLength: 5
     - _UVSec: 0
     - _WireframeOn: 1
     - _WireframeThickness: 0.01
