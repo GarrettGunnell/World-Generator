@@ -4,6 +4,8 @@
         _WireframeThickness ("Wireframe Thickness", Range(0.01, 10)) = 1
         _WireframeOn ("Toggle Wireframe", Int) = 1
         _TessellationEdgeLength ("Tessellation Edge Length", Range(5, 100)) = 50
+        [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
+        _DisplacementStrength ("Displacement Strength", Range(0.1, 5)) = 5
     }
 
     SubShader {
@@ -23,13 +25,20 @@
             float _WireframeThickness;
             int _WireframeOn;
             float _TessellationEdgeLength;
+            float _DisplacementStrength;
+
+            sampler2D _HeightMap;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
+                float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
             struct VertexData {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
             struct v2g {
@@ -39,11 +48,19 @@
             TessellationControlPoint dummyvp(VertexData v) {
                 TessellationControlPoint p;
                 p.vertex = v.vertex;
+                p.normal = v.normal;
+                p.uv = v.uv;
                 return p;
             }
 
             v2g vp(VertexData v) {
                 v2g g;
+
+                float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
+                displacement *= _DisplacementStrength;
+                v.normal = normalize(v.normal);
+                v.vertex.xyz += v.normal * displacement;
+
                 g.pos = UnityObjectToClipPos(v.vertex);
 
                 return g;
@@ -117,6 +134,8 @@
             v2g dp(TessellationFactors factors, OutputPatch<TessellationControlPoint, 3> patch, float3 barycentricCoordinates : SV_DOMAINLOCATION) {
                 VertexData data;
                 DP_INTERPOLATE(vertex)
+                DP_INTERPOLATE(normal)
+                DP_INTERPOLATE(uv)
 
                 return vp(data);
             }
