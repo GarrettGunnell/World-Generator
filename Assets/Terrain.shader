@@ -5,7 +5,7 @@
         _WireframeOn ("Toggle Wireframe", Int) = 1
         _TessellationEdgeLength ("Tessellation Edge Length", Range(5, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
-        _DisplacementStrength ("Displacement Strength", Range(0.1, 5)) = 5
+        _DisplacementStrength ("Displacement Strength", Range(0.1, 10)) = 5
     }
 
     SubShader {
@@ -58,7 +58,7 @@
                 v2g g;
 
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
-                displacement *= _DisplacementStrength;
+                displacement = (displacement - 0.5) * _DisplacementStrength;
                 v.normal = normalize(v.normal);
                 v.vertex.xyz += v.normal * displacement;
 
@@ -160,7 +160,7 @@
             float4 fp(g2f f) : SV_TARGET {
                 float3 albedo = _WireframeOn ? _Albedo * getWireframe(f) : _Albedo;
                 float4 position = mul(unity_WorldToObject, f.data.worldPos);
-                float heightColor = map(position.y, 0, _DisplacementStrength, 0.1, 1);
+                float heightColor = map(position.y, -(_DisplacementStrength / 2), _DisplacementStrength / 2, 0.1, 1);
                 albedo *= heightColor;
 
                 return float4(albedo, 1);
