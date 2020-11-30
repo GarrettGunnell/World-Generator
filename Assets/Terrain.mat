@@ -70,9 +70,9 @@ Material:
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
-    - _TessellationEdgeLength: 5
+    - _TessellationEdgeLength: 18.6
     - _UVSec: 0
-    - _WireframeOn: 1
+    - _WireframeOn: 1.1
     - _WireframeThickness: 0.01
     - _ZWrite: 1
     m_Colors:
