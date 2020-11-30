@@ -43,6 +43,7 @@
 
             struct v2g {
                 float4 pos : SV_POSITION;
+                float4 worldPos : TEXCOORD0;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -62,13 +63,14 @@
                 v.vertex.xyz += v.normal * displacement;
 
                 g.pos = UnityObjectToClipPos(v.vertex);
+                g.worldPos = mul(unity_ObjectToWorld, v.vertex);
 
                 return g;
             }
 
             struct g2f {
                 v2g data;
-                float2 barycentricCoordinates : TEXCOORD0;
+                float2 barycentricCoordinates : TEXCOORD9;
             };
 
             struct TessellationFactors {
@@ -151,8 +153,15 @@
                 return minBary;
             }
 
+            float map(float value, float min1, float max1, float min2, float max2) {
+                return (value - min1) * (max2 - min2) / (max1 - min1) + min2; 
+            }
+
             float4 fp(g2f f) : SV_TARGET {
                 float3 albedo = _WireframeOn ? _Albedo * getWireframe(f) : _Albedo;
+                float4 position = mul(unity_WorldToObject, f.data.worldPos);
+                float heightColor = map(position.y, 0, _DisplacementStrength, 0.1, 1);
+                albedo *= heightColor;
 
                 return float4(albedo, 1);
             }
