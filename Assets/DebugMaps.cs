@@ -3,39 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class DebugMaps : MonoBehaviour {
-    public ComputeShader mapGenerator;
     public bool updateMap = false;
     public bool exportMap = false;
 
-    private RenderTexture target;
+    private RenderTexture map;
+    private HeightMapGenerator mapGenerator;
     public int seed;
 
     private void Awake() {
         seed = Random.Range(1, 10000000);
+
+        mapGenerator = new HeightMapGenerator(786, 629);
+        map = mapGenerator.GenerateMap(seed);
     }
 
     private void Update() {
         if (updateMap) {
             seed = Random.Range(1, 10000000);
+            map = mapGenerator.GenerateMap(seed);
             updateMap = false;
         }
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
-        if (target == null) {
-            target = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            target.enableRandomWrite = true;
-            target.Create();
-        }
-
-        int kernel = mapGenerator.FindKernel("CSMain");
-        mapGenerator.SetTexture(kernel, "Result", target);
-        mapGenerator.SetInt("_Seed", seed);
-        int threadGroupsX = Mathf.CeilToInt(target.width / 8.0f);
-        int threadGroupsY = Mathf.CeilToInt(target.height / 8.0f);
-        mapGenerator.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
-        
-        Graphics.Blit(target, destination);
+        Graphics.Blit(map, destination);
     }
 
     private void LateUpdate() {

@@ -14,11 +14,11 @@ public class HeightMapGenerator {
             map.Create();
         }
 
-        computeMap = (ComputeShader)Resources.Load("MapGenerator");
-        computeMap.SetTexture(0, "_Result", map);
+        computeMap = Resources.Load<ComputeShader>("MapGenerator");
+        computeMap.SetTexture(0, "Result", map);
     }
 
-    public RenderTexture GenerateMap(uint seed) {
+    public RenderTexture GenerateMap(int seed) {
         computeMap.SetInt("_Seed", (int)seed);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
