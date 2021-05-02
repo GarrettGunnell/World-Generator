@@ -1,12 +1,11 @@
 ﻿#pragma kernel CSMain
 
-#include "Random.cginc"
+#include "Simplex.compute"
 
 uint _Seed;
 RWTexture2D<float4> Result;
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID) {
-    initRand((_Seed + id.x) * (_Seed * id.y) + (_Seed * id.x) * (_Seed + id.y));
-    Result[id.xy] = randValue();
+    Result[id.xy] = snoise(id);
 }
