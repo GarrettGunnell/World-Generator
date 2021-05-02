@@ -8,7 +8,7 @@ public class DebugMaps : MonoBehaviour {
     public bool exportMap = false;
 
     private RenderTexture target;
-    private int seed;
+    public int seed;
 
     private void Awake() {
         seed = Random.Range(1, 10000000);

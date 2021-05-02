@@ -25,5 +25,5 @@ float fbm(uint3 v) {
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID) {
-    Result[id.xy] = fbm(id);
+    Result[id.xy] = fbm(id + _Seed);
 }
