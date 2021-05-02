@@ -5,6 +5,7 @@ using UnityEngine;
 public class DebugMaps : MonoBehaviour {
     public ComputeShader mapGenerator;
     public bool updateMap = false;
+    public bool exportMap = false;
 
     private RenderTexture target;
     private int seed;
@@ -35,5 +36,22 @@ public class DebugMaps : MonoBehaviour {
         mapGenerator.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
         
         Graphics.Blit(target, destination);
+    }
+
+    private void LateUpdate() {
+        if (exportMap) {
+            RenderTexture rt = new RenderTexture(786, 629, 24);
+            GetComponent<Camera>().targetTexture = rt;
+            Texture2D screenshot = new Texture2D(786, 629, TextureFormat.RGB24, false);
+            GetComponent<Camera>().Render();
+            RenderTexture.active = rt;
+            screenshot.ReadPixels(new Rect(0, 0, 786, 629), 0, 0);
+            GetComponent<Camera>().targetTexture = null;
+            RenderTexture.active = null;
+            Destroy(rt);
+            string filename = string.Format("{0}/../Maps/map_{1}.png", Application.dataPath, System.DateTime.Now.ToString("HH-mm-ss"));
+            System.IO.File.WriteAllBytes(filename, screenshot.EncodeToPNG());
+            exportMap = false;
+        }
     }
 }

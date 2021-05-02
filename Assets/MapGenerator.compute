@@ -7,5 +7,20 @@ RWTexture2D<float4> Result;
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID) {
-    Result[id.xy] = snoise(id);
+    
+    int numOctaves = 10;
+    float H = 0.5;
+    
+    float G = exp2(-H);
+    float frequency = 0.007;
+    float a = 1.0;
+    float t = 0.2;
+
+    for (int i = 0; i < numOctaves; ++i) {
+        t += a * snoise(id * frequency);
+        frequency *= 2.0;
+        a *= G;
+    }
+
+    Result[id.xy] = t;
 }
