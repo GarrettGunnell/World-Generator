@@ -56,7 +56,7 @@
 
             v2g vp(VertexData v) {
                 v2g g;
-
+                
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
                 displacement = (displacement - 0.5) * _DisplacementStrength;
                 v.normal = normalize(v.normal);
