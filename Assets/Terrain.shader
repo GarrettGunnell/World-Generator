@@ -9,7 +9,16 @@
     SubShader {
 
         Pass {
+            Tags {
+                "LightMode" = "ForwardBase"
+            }
+
+
             CGPROGRAM
+
+            #include "UnityStandardBRDF.cginc"
+			#include "UnityStandardUtils.cginc"
+
 
             #pragma target 5.0
             
@@ -24,6 +33,7 @@
             float _DisplacementStrength;
 
             sampler2D _HeightMap;
+            float4 _HeightMap_TexelSize;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
@@ -35,14 +45,15 @@
             struct VertexData {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
                 float4 tangent : TANGENT;
+                float2 uv : TEXCOORD0;
             };
 
             struct v2g {
                 float4 pos : SV_POSITION;
                 float3 normal : NORMAL;
                 float4 tangent : TANGENT;
+                float2 uv : TEXCOORD0;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -60,12 +71,13 @@
                 
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
                 displacement = displacement * _DisplacementStrength;
-                v.normal = normalize(v.normal);
+                
                 v.vertex.xyz += v.normal * displacement;
 
                 g.pos = UnityObjectToClipPos(v.vertex);
                 g.normal = mul(unity_ObjectToWorld, v.normal);
                 g.normal = normalize(g.normal);
+                g.uv = v.uv;
                 g.tangent = v.tangent;
 
                 return g;
@@ -146,8 +158,22 @@
                 return vp(data);
             }
 
-            float4 fp(g2f f) : SV_TARGET {
-                return float4(_Albedo, 1);
+            float3 fp(g2f f) : SV_TARGET {
+                float3 lightDir = _WorldSpaceLightPos0.xyz;
+
+                float2 du = float2(_HeightMap_TexelSize.x * 0.5, 0);
+                float u1 = tex2D(_HeightMap, f.data.uv - du);
+                float u2 = tex2D(_HeightMap, f.data.uv + du);
+
+                float3 tu = float3(1, u1 - u2, 0);
+
+                float2 dv = float2(0, _HeightMap_TexelSize.y * 0.5);
+                float v1 = tex2D(_HeightMap, f.data.uv - dv);
+                float v2 = tex2D(_HeightMap, f.data.uv + dv);
+                float3 tv = float3(0, v1 - v2, 1);
+
+                f.data.normal = cross(tv, tu);
+                return dot(lightDir, normalize(f.data.normal));
             }
 
             ENDCG
