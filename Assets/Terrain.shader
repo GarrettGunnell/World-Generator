@@ -1,8 +1,6 @@
 ﻿Shader "Custom/Terrain" {
     Properties {
         _Albedo ("Albedo", Color) = (1, 1, 1)
-        _WireframeThickness ("Wireframe Thickness", Range(0.01, 10)) = 1
-        _WireframeOn ("Toggle Wireframe", Int) = 1
         _TessellationEdgeLength ("Tessellation Edge Length", Range(5, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 10)) = 5
@@ -22,8 +20,6 @@
             #pragma fragment fp
 
             float3 _Albedo;
-            float _WireframeThickness;
-            int _WireframeOn;
             float _TessellationEdgeLength;
             float _DisplacementStrength;
 
@@ -33,17 +29,20 @@
                 float4 vertex : INTERNALTESSPOS;
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
+                float4 tangent : TANGENT;
             };
 
             struct VertexData {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
+                float4 tangent : TANGENT;
             };
 
             struct v2g {
                 float4 pos : SV_POSITION;
-                float4 worldPos : TEXCOORD0;
+                float3 normal : NORMAL;
+                float4 tangent : TANGENT;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -51,6 +50,8 @@
                 p.vertex = v.vertex;
                 p.normal = v.normal;
                 p.uv = v.uv;
+                p.tangent = v.tangent;
+
                 return p;
             }
 
@@ -58,12 +59,14 @@
                 v2g g;
                 
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
-                displacement = (displacement - 0.5) * _DisplacementStrength;
+                displacement = displacement * _DisplacementStrength;
                 v.normal = normalize(v.normal);
                 v.vertex.xyz += v.normal * displacement;
 
                 g.pos = UnityObjectToClipPos(v.vertex);
-                g.worldPos = mul(unity_ObjectToWorld, v.vertex);
+                g.normal = mul(unity_ObjectToWorld, v.normal);
+                g.normal = normalize(g.normal);
+                g.tangent = v.tangent;
 
                 return g;
             }
@@ -137,33 +140,14 @@
                 VertexData data;
                 DP_INTERPOLATE(vertex)
                 DP_INTERPOLATE(normal)
+                DP_INTERPOLATE(tangent)
                 DP_INTERPOLATE(uv)
 
                 return vp(data);
             }
 
-            float getWireframe(g2f f) {
-                float3 barys;
-                barys.xy = f.barycentricCoordinates;
-                barys.z = 1 - barys.x - barys.y;
-                float3 deltas = fwidth(barys);
-                barys = smoothstep(deltas * _WireframeThickness, (deltas * _WireframeThickness) + deltas, barys);
-                float minBary = min(barys.x, min(barys.y, barys.z));
-
-                return minBary;
-            }
-
-            float map(float value, float min1, float max1, float min2, float max2) {
-                return (value - min1) * (max2 - min2) / (max1 - min1) + min2; 
-            }
-
             float4 fp(g2f f) : SV_TARGET {
-                float3 albedo = _WireframeOn ? _Albedo * getWireframe(f) : _Albedo;
-                float4 position = mul(unity_WorldToObject, f.data.worldPos);
-                float heightColor = map(position.y, -(_DisplacementStrength / 2), _DisplacementStrength / 2, 0.1, 1);
-                albedo *= heightColor;
-
-                return float4(albedo, 1);
+                return float4(_Albedo, 1);
             }
 
             ENDCG
