@@ -173,7 +173,7 @@
                 float3 tv = float3(0, v1 - v2, 1);
 
                 f.data.normal = cross(tv, tu);
-                return dot(lightDir, normalize(f.data.normal));
+                return _Albedo * dot(lightDir, normalize(f.data.normal));
             }
 
             ENDCG

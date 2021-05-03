@@ -12,7 +12,7 @@ public class TerrainGenerator : MonoBehaviour {
 
     private void Awake() {
         seed = Random.Range(1, 1000000);
-        mapGenerator = new HeightMapGenerator(256, 256);
+        mapGenerator = new HeightMapGenerator(512, 512);
         map = mapGenerator.GenerateMap(seed);
         GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
     }
