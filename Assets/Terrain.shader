@@ -3,7 +3,7 @@
 Shader "Custom/Terrain" {
     Properties {
         _Albedo ("Albedo", Color) = (1, 1, 1)
-        _TessellationEdgeLength ("Tessellation Edge Length", Range(5, 100)) = 50
+        _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 10000)) = 5
     }
@@ -101,7 +101,7 @@ Shader "Custom/Terrain" {
                 float3 edgeCenter = (cp0 + cp1) * 0.5;
                 float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
 
-                return edgeLength * _ScreenParams.y / (_TessellationEdgeLength * viewDistance);
+                return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
             }
 
             TessellationFactors PatchFunction(InputPatch<TessellationControlPoint, 3> patch) {
@@ -195,18 +195,106 @@ Shader "Custom/Terrain" {
             #include "UnityStandardBRDF.cginc"
 			#include "UnityStandardUtils.cginc"
 
-            #pragma vertex vp
+            #pragma vertex dummyvp
+            #pragma hull hp
+            #pragma domain dp
             #pragma fragment fp
 
-            struct VertexData {
-                float4 position : POSITION;
+            float _TessellationEdgeLength;
+            float _DisplacementStrength;
+            sampler2D _HeightMap;
+
+            struct ShadowTessControlPoint {
+                float4 vertex : INTERNALTESSPOS;
                 float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
-            float4 vp(VertexData v) : SV_POSITION {
-                float4 position = UnityClipSpaceShadowCasterPos(v.position.xyz, v.normal);
+            struct VertexData {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
+            };
 
-                return UnityApplyLinearShadowBias(position);
+            struct TessellationFactors {
+                float edge[3] : SV_TESSFACTOR;
+                float inside : SV_INSIDETESSFACTOR;
+            };
+
+            struct v2f {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            ShadowTessControlPoint dummyvp(VertexData v) {
+                ShadowTessControlPoint p;
+                p.vertex = v.vertex;
+                p.normal = v.normal;
+                p.uv = v.uv;
+
+                return p;
+            };
+
+            v2f vp(VertexData v) {
+                v2f f;
+                float displacement = tex2Dlod(_HeightMap, float4(v.uv.xy, 0, 0));
+                displacement = displacement * _DisplacementStrength;
+                v.normal = normalize(v.normal);
+                v.vertex.xyz += v.normal * displacement;
+
+                f.pos = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
+                f.pos = UnityApplyLinearShadowBias(f.pos);
+                f.uv = v.uv;
+
+                return f;
+            }
+
+            float TessellationHeuristic(float3 cp0, float3 cp1) {
+                float edgeLength = distance(cp0, cp1);
+                float3 edgeCenter = (cp0 + cp1) * 0.5;
+                float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
+
+                return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
+            }
+
+            TessellationFactors PatchFunction(InputPatch<ShadowTessControlPoint, 3> patch) {
+                float3 p0 = mul(unity_ObjectToWorld, patch[0].vertex);
+                float3 p1 = mul(unity_ObjectToWorld, patch[1].vertex);
+                float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
+
+                TessellationFactors f;
+                f.edge[0] = TessellationHeuristic(p1, p2);
+                f.edge[1] = TessellationHeuristic(p2, p0);
+                f.edge[2] = TessellationHeuristic(p0, p1);
+                f.inside = (TessellationHeuristic(p1, p2) +
+                            TessellationHeuristic(p2, p0) +
+                            TessellationHeuristic(p1, p2)) * (1 / 3.0);
+
+                return f;
+            }
+
+            [UNITY_domain("tri")]
+            [UNITY_outputcontrolpoints(3)]
+            [UNITY_outputtopology("triangle_cw")]
+            [UNITY_partitioning("integer")]
+            [UNITY_patchconstantfunc("PatchFunction")]
+            ShadowTessControlPoint hp(InputPatch<ShadowTessControlPoint, 3> patch, uint id : SV_OUTPUTCONTROLPOINTID) {
+                return patch[id];
+            }
+
+            #define DP_INTERPOLATE(fieldName) data.fieldName = \
+                data.fieldName = patch[0].fieldName * barycentricCoordinates.x + \
+                                 patch[1].fieldName * barycentricCoordinates.y + \
+                                 patch[2].fieldName * barycentricCoordinates.z;
+
+            [UNITY_domain("tri")]
+            v2f dp(TessellationFactors factors, OutputPatch<ShadowTessControlPoint, 3> patch, float3 barycentricCoordinates : SV_DOMAINLOCATION) {
+                VertexData data;
+                DP_INTERPOLATE(vertex)
+                DP_INTERPOLATE(normal)
+                DP_INTERPOLATE(uv)
+
+                return vp(data);
             }
 
             half4 fp() : SV_TARGET {
