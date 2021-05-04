@@ -1,26 +1,27 @@
-﻿Shader "Custom/Terrain" {
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Custom/Terrain" {
     Properties {
         _Albedo ("Albedo", Color) = (1, 1, 1)
         _TessellationEdgeLength ("Tessellation Edge Length", Range(5, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
-        _DisplacementStrength ("Displacement Strength", Range(0.1, 10)) = 5
+        _DisplacementStrength ("Displacement Strength", Range(0.1, 10000)) = 5
     }
 
     SubShader {
-
         Pass {
             Tags {
                 "LightMode" = "ForwardBase"
             }
 
-
             CGPROGRAM
-
-            #include "UnityStandardBRDF.cginc"
-			#include "UnityStandardUtils.cginc"
-
-
+            
             #pragma target 5.0
+
+            #define SHADOWS_SCREEN
+            
+            #include "UnityPBSLighting.cginc"
+            #include "AutoLight.cginc"
             
             #pragma vertex dummyvp
             #pragma hull hp
@@ -52,8 +53,8 @@
             struct v2g {
                 float4 pos : SV_POSITION;
                 float3 normal : NORMAL;
-                float4 tangent : TANGENT;
                 float2 uv : TEXCOORD0;
+                float4 shadowCoords : TEXCOORD1;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -77,8 +78,10 @@
                 g.pos = UnityObjectToClipPos(v.vertex);
                 g.normal = mul(unity_ObjectToWorld, v.normal);
                 g.normal = normalize(g.normal);
+                g.shadowCoords = v.vertex;
+                g.shadowCoords.xy = (float2(g.pos.x, -g.pos.y) + g.pos.w) * 0.5;
+                g.shadowCoords.zw = g.pos.zw;
                 g.uv = v.uv;
-                g.tangent = v.tangent;
 
                 return g;
             }
@@ -164,7 +167,6 @@
                 float2 du = float2(_HeightMap_TexelSize.x * 0.5, 0);
                 float u1 = tex2D(_HeightMap, f.data.uv - du);
                 float u2 = tex2D(_HeightMap, f.data.uv + du);
-
                 float3 tu = float3(1, u1 - u2, 0);
 
                 float2 dv = float2(0, _HeightMap_TexelSize.y * 0.5);
@@ -173,7 +175,42 @@
                 float3 tv = float3(0, v1 - v2, 1);
 
                 f.data.normal = cross(tv, tu);
-                return _Albedo * dot(lightDir, normalize(f.data.normal));
+                float attenuation = tex2D(_ShadowMapTexture, f.data.shadowCoords.xy / f.data.shadowCoords.w);
+
+                return _Albedo * attenuation * dot(lightDir, normalize(f.data.normal));
+            }
+
+            ENDCG
+        }
+
+        Pass {
+            Tags {
+                "LightMode" = "ShadowCaster"
+            }
+
+            CGPROGRAM
+            
+            #pragma target 5.0
+
+            #include "UnityStandardBRDF.cginc"
+			#include "UnityStandardUtils.cginc"
+
+            #pragma vertex vp
+            #pragma fragment fp
+
+            struct VertexData {
+                float4 position : POSITION;
+                float3 normal : NORMAL;
+            };
+
+            float4 vp(VertexData v) : SV_POSITION {
+                float4 position = UnityClipSpaceShadowCasterPos(v.position.xyz, v.normal);
+
+                return UnityApplyLinearShadowBias(position);
+            }
+
+            half4 fp() : SV_TARGET {
+                return 0;
             }
 
             ENDCG
