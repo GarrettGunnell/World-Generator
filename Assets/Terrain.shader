@@ -8,6 +8,26 @@ Shader "Custom/Terrain" {
         _DisplacementStrength ("Displacement Strength", Range(0.1, 10000)) = 5
     }
 
+    CGINCLUDE
+        float _TessellationEdgeLength;
+        float _DisplacementStrength;
+
+        sampler2D _HeightMap;
+        float4 _HeightMap_TexelSize;
+
+        struct TessellationFactors {
+            float edge[3] : SV_TESSFACTOR;
+            float inside : SV_INSIDETESSFACTOR;
+        };
+
+        float TessellationHeuristic(float3 cp0, float3 cp1) {
+            float edgeLength = distance(cp0, cp1);
+            float3 edgeCenter = (cp0 + cp1) * 0.5;
+
+            return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
+        }
+    ENDCG
+
     SubShader {
         Pass {
             Tags {
@@ -30,11 +50,6 @@ Shader "Custom/Terrain" {
             #pragma fragment fp
 
             float3 _Albedo;
-            float _TessellationEdgeLength;
-            float _DisplacementStrength;
-
-            sampler2D _HeightMap;
-            float4 _HeightMap_TexelSize;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
@@ -90,19 +105,6 @@ Shader "Custom/Terrain" {
                 v2g data;
                 float2 barycentricCoordinates : TEXCOORD9;
             };
-
-            struct TessellationFactors {
-                float edge[3] : SV_TESSFACTOR;
-                float inside : SV_INSIDETESSFACTOR;
-            };
-
-            float TessellationHeuristic(float3 cp0, float3 cp1) {
-                float edgeLength = distance(cp0, cp1);
-                float3 edgeCenter = (cp0 + cp1) * 0.5;
-                float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
-
-                return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
-            }
 
             TessellationFactors PatchFunction(InputPatch<TessellationControlPoint, 3> patch) {
                 float3 p0 = mul(unity_ObjectToWorld, patch[0].vertex);
@@ -200,10 +202,6 @@ Shader "Custom/Terrain" {
             #pragma domain dp
             #pragma fragment fp
 
-            float _TessellationEdgeLength;
-            float _DisplacementStrength;
-            sampler2D _HeightMap;
-
             struct ShadowTessControlPoint {
                 float4 vertex : INTERNALTESSPOS;
                 float3 normal : NORMAL;
@@ -214,11 +212,6 @@ Shader "Custom/Terrain" {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
-            };
-
-            struct TessellationFactors {
-                float edge[3] : SV_TESSFACTOR;
-                float inside : SV_INSIDETESSFACTOR;
             };
 
             struct v2f {
@@ -247,14 +240,6 @@ Shader "Custom/Terrain" {
                 f.uv = v.uv;
 
                 return f;
-            }
-
-            float TessellationHeuristic(float3 cp0, float3 cp1) {
-                float edgeLength = distance(cp0, cp1);
-                float3 edgeCenter = (cp0 + cp1) * 0.5;
-                float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
-
-                return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
             }
 
             TessellationFactors PatchFunction(InputPatch<ShadowTessControlPoint, 3> patch) {
