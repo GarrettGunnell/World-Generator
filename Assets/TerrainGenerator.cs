@@ -14,6 +14,9 @@ public class TerrainGenerator : MonoBehaviour {
         mapGenerator = new HeightMapGenerator(256, 256);
         mapGenerator.GenerateMap(seed);
         GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", mapGenerator.GetMap());
+
+        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 1000, mesh.bounds.size.z));
     }
 
     private void Update() {

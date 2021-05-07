@@ -6,13 +6,13 @@ uint _Seed;
 RWTexture2D<float4> Result;
 
 float fbm(uint3 v) {
-    int numOctaves = 10;
-    float H = 0.5;
+    int numOctaves = 16;
+    float H = 1;
     
     float G = exp2(-H);
-    float frequency = 0.007;
+    float frequency = 0.003;
     float amp = 1.0;
-    float noise = 0.2;
+    float noise = 0;
 
     for (int i = 0; i < numOctaves; ++i) {
         noise += amp * snoise(v * frequency);
@@ -25,5 +25,5 @@ float fbm(uint3 v) {
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID) {
-    Result[id.xy] = fbm(id + _Seed);
+    Result[id.xy] = max(0, fbm(id + _Seed));
 }
