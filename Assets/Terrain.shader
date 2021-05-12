@@ -23,9 +23,10 @@ Shader "Custom/Terrain" {
         float TessellationHeuristic(float3 cp0, float3 cp1) {
             float edgeLength = distance(cp0, cp1);
             float3 edgeCenter = (cp0 + cp1) * 0.5;
+            float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
 
-            return 1;
-            //return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
+            //return 1;
+            return edgeLength * _ScreenParams.y / (_TessellationEdgeLength * viewDistance);
         }
         bool TriangleIsBelowClipPlane(float3 p0, float3 p1, float3 p2, int planeIndex, float bias) {
             float4 plane = unity_CameraWorldClipPlanes[planeIndex];
@@ -37,7 +38,7 @@ Shader "Custom/Terrain" {
             return TriangleIsBelowClipPlane(p0, p1, p2, 0, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 1, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 2, bias) ||
-                   TriangleIsBelowClipPlane(p0, p1, p2, 3, bias);
+                   TriangleIsBelowClipPlane(p0, p1, p2, 3, -0.9 * _DisplacementStrength);
         }
     ENDCG
 
@@ -125,7 +126,7 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                float bias = -0.9 * _DisplacementStrength;
+                float bias = -0.5 * _DisplacementStrength;
                 if (cullTriangle(p0, p1, p2, bias)) {
                     f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
                 } else {
