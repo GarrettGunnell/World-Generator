@@ -27,6 +27,18 @@ Shader "Custom/Terrain" {
             return 1;
             //return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
         }
+        bool TriangleIsBelowClipPlane(float3 p0, float3 p1, float3 p2, int planeIndex, float bias) {
+            float4 plane = unity_CameraWorldClipPlanes[planeIndex];
+
+            return dot(float4(p0, 1), plane) < bias && dot(float4(p1, 1), plane) < bias && dot(float4(p2, 1), plane) < bias;
+        }
+
+        bool cullTriangle(float3 p0, float3 p1, float3 p2, float bias) {
+            return TriangleIsBelowClipPlane(p0, p1, p2, 0, bias) ||
+                   TriangleIsBelowClipPlane(p0, p1, p2, 1, bias) ||
+                   TriangleIsBelowClipPlane(p0, p1, p2, 2, bias) ||
+                   TriangleIsBelowClipPlane(p0, p1, p2, 3, bias);
+        }
     ENDCG
 
     SubShader {
@@ -113,13 +125,17 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                f.edge[0] = TessellationHeuristic(p1, p2);
-                f.edge[1] = TessellationHeuristic(p2, p0);
-                f.edge[2] = TessellationHeuristic(p0, p1);
-                f.inside = (TessellationHeuristic(p1, p2) +
-                            TessellationHeuristic(p2, p0) +
-                            TessellationHeuristic(p1, p2)) * (1 / 3.0);
-
+                float bias = -0.9 * _DisplacementStrength;
+                if (cullTriangle(p0, p1, p2, bias)) {
+                    f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
+                } else {
+                    f.edge[0] = TessellationHeuristic(p1, p2);
+                    f.edge[1] = TessellationHeuristic(p2, p0);
+                    f.edge[2] = TessellationHeuristic(p0, p1);
+                    f.inside = (TessellationHeuristic(p1, p2) +
+                                TessellationHeuristic(p2, p0) +
+                                TessellationHeuristic(p1, p2)) * (1 / 3.0);
+                }
                 return f;
             }
 
@@ -251,13 +267,17 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                f.edge[0] = TessellationHeuristic(p1, p2);
-                f.edge[1] = TessellationHeuristic(p2, p0);
-                f.edge[2] = TessellationHeuristic(p0, p1);
-                f.inside = (TessellationHeuristic(p1, p2) +
-                            TessellationHeuristic(p2, p0) +
-                            TessellationHeuristic(p1, p2)) * (1 / 3.0);
-
+                float bias = -0.9 * _DisplacementStrength;
+                if (cullTriangle(p0, p1, p2, bias)) {
+                    f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
+                } else {
+                    f.edge[0] = TessellationHeuristic(p1, p2);
+                    f.edge[1] = TessellationHeuristic(p2, p0);
+                    f.edge[2] = TessellationHeuristic(p0, p1);
+                    f.inside = (TessellationHeuristic(p1, p2) +
+                                TessellationHeuristic(p2, p0) +
+                                TessellationHeuristic(p1, p2)) * (1 / 3.0);
+                }
                 return f;
             }
 
