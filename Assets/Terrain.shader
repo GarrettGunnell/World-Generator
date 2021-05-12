@@ -5,7 +5,7 @@ Shader "Custom/Terrain" {
         _Albedo ("Albedo", Color) = (1, 1, 1)
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
-        _DisplacementStrength ("Displacement Strength", Range(0.1, 10000)) = 5
+        _DisplacementStrength ("Displacement Strength", Range(0.1, 20000)) = 5
     }
 
     CGINCLUDE
@@ -24,7 +24,8 @@ Shader "Custom/Terrain" {
             float edgeLength = distance(cp0, cp1);
             float3 edgeCenter = (cp0 + cp1) * 0.5;
 
-            return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
+            return 1;
+            //return edgeLength * _ScreenParams.y / (_TessellationEdgeLength);
         }
     ENDCG
 
@@ -179,7 +180,9 @@ Shader "Custom/Terrain" {
                 f.data.normal = cross(tv, tu);
                 float attenuation = tex2D(_ShadowMapTexture, f.data.shadowCoords.xy / f.data.shadowCoords.w);
 
-                return _Albedo * attenuation * dot(lightDir, normalize(f.data.normal));
+                float normalContribution = DotClamped(lightDir, normalize(f.data.normal));
+
+                return _Albedo * attenuation * normalContribution;
             }
 
             ENDCG
