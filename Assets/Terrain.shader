@@ -5,6 +5,7 @@ Shader "Custom/Terrain" {
         _Albedo ("Albedo", Color) = (1, 1, 1)
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
+        [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "Normal Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 20000)) = 5
     }
 
@@ -63,6 +64,7 @@ Shader "Custom/Terrain" {
             #pragma fragment fp
 
             float3 _Albedo;
+            sampler2D _NormalMap;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
@@ -182,21 +184,12 @@ Shader "Custom/Terrain" {
 
             float3 fp(g2f f) : SV_TARGET {
                 float3 lightDir = _WorldSpaceLightPos0.xyz;
-
-                float2 du = float2(_HeightMap_TexelSize.x * 0.5, 0);
-                float u1 = tex2D(_HeightMap, f.data.uv - du);
-                float u2 = tex2D(_HeightMap, f.data.uv + du);
-                float3 tu = float3(1, u1 - u2, 0);
-
-                float2 dv = float2(0, _HeightMap_TexelSize.y * 0.5);
-                float v1 = tex2D(_HeightMap, f.data.uv - dv);
-                float v2 = tex2D(_HeightMap, f.data.uv + dv);
-                float3 tv = float3(0, v1 - v2, 1);
-
-                f.data.normal = cross(tv, tu);
                 float attenuation = tex2D(_ShadowMapTexture, f.data.shadowCoords.xy / f.data.shadowCoords.w);
 
-                float normalContribution = DotClamped(lightDir, normalize(f.data.normal));
+                f.data.normal.xzy = tex2D(_NormalMap, f.data.uv).xyz;
+                f.data.normal = normalize(f.data.normal * 2 - 1);
+
+                float normalContribution = DotClamped(lightDir, f.data.normal);
 
                 return _Albedo * attenuation * normalContribution;
             }
