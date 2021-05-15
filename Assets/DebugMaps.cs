@@ -7,7 +7,10 @@ public class DebugMaps : MonoBehaviour {
     public bool updateMap = false;
     public bool exportMap = false;
 
-    private RenderTexture target;
+    public bool showNormalMap = false;
+
+    private RenderTexture map;
+    private RenderTexture normals;
     public int seed;
 
     private void Awake() {
@@ -22,20 +25,29 @@ public class DebugMaps : MonoBehaviour {
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination) {
-        if (target == null) {
-            target = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            target.enableRandomWrite = true;
-            target.Create();
+        if (map == null) {
+            map = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            map.enableRandomWrite = true;
+            map.Create();
         }
 
-        int kernel = mapGenerator.FindKernel("CSMain");
-        mapGenerator.SetTexture(kernel, "Result", target);
+        if (normals == null) {
+            normals = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            normals.enableRandomWrite = true;
+            normals.Create();
+        }
+
+        mapGenerator.SetTexture(0, "_HeightMap", map);
         mapGenerator.SetInt("_Seed", seed);
-        int threadGroupsX = Mathf.CeilToInt(target.width / 8.0f);
-        int threadGroupsY = Mathf.CeilToInt(target.height / 8.0f);
-        mapGenerator.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
+        int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
+        int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
+        mapGenerator.Dispatch(0, threadGroupsX, threadGroupsY, 1);
+
+        mapGenerator.SetTexture(1, "_HeightMap", map);
+        mapGenerator.SetTexture(1, "_NormalMap", normals);
+        mapGenerator.Dispatch(1, threadGroupsX, threadGroupsY, 1);
         
-        Graphics.Blit(target, destination);
+        Graphics.Blit(showNormalMap ? normals : map, destination);
     }
 
     private void LateUpdate() {

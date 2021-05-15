@@ -1,4 +1,4 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+﻿
 
 Shader "Custom/Terrain" {
     Properties {
@@ -25,8 +25,7 @@ Shader "Custom/Terrain" {
             float3 edgeCenter = (cp0 + cp1) * 0.5;
             float viewDistance = distance(edgeCenter, _WorldSpaceCameraPos);
 
-            //return 1;
-            return edgeLength * _ScreenParams.y / (_TessellationEdgeLength * viewDistance);
+            return edgeLength * _ScreenParams.y / (_TessellationEdgeLength * (viewDistance * 0.5));
         }
         bool TriangleIsBelowClipPlane(float3 p0, float3 p1, float3 p2, int planeIndex, float bias) {
             float4 plane = unity_CameraWorldClipPlanes[planeIndex];
@@ -268,7 +267,7 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                float bias = -0.9 * _DisplacementStrength;
+                float bias = -0.5 * _DisplacementStrength;
                 if (cullTriangle(p0, p1, p2, bias)) {
                     f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
                 } else {

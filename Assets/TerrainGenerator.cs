@@ -29,7 +29,7 @@ public class TerrainGenerator : MonoBehaviour {
         }
 
         computeMap = Resources.Load<ComputeShader>("MapGenerator");
-        computeMap.SetTexture(0, "Result", map);
+        computeMap.SetTexture(0, "_HeightMap", map);
 
 
         GenerateMap();

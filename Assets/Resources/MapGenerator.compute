@@ -1,9 +1,11 @@
-﻿#pragma kernel CSMain
+﻿#pragma kernel HeightMap
+#pragma kernel NormalMap
 
 #include "Simplex.compute"
 
 uint _Seed;
-RWTexture2D<float4> Result;
+RWTexture2D<float4> _HeightMap;
+RWTexture2D<float4> _NormalMap;
 
 float fbm(uint3 v) {
     int numOctaves = 16;
@@ -24,6 +26,22 @@ float fbm(uint3 v) {
 }
 
 [numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID) {
-    Result[id.xy] = max(0, fbm(id + _Seed));
+void HeightMap(uint3 id : SV_DISPATCHTHREADID) {
+    _HeightMap[id.xy] = max(0, fbm(id + _Seed));
+}
+
+[numthreads(8,8,1)]
+void NormalMap(uint3 id : SV_DISPATCHTHREADID) {
+    float u1 = _HeightMap[id.xy - uint2(1, 0)].r;
+    float u2 = _HeightMap[id.xy + uint2(1, 0)].r;
+
+    float v1 = _HeightMap[id.xy - uint2(0, 1)].r;
+    float v2 = _HeightMap[id.xy + uint2(0, 1)].r;
+
+    float3 normal = float3(u1 - u2, 1, v1 - v2);
+
+    normal.xyz = (normal.xyz + 1) / 2;
+
+
+    _NormalMap[id.xy] = float4(normal.x, normal.z, normal.y, 0);
 }
