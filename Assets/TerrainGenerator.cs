@@ -37,6 +37,8 @@ public class TerrainGenerator : MonoBehaviour {
         }
 
         computeMap = Resources.Load<ComputeShader>("MapGenerator");
+        computeMap.SetInt("_Width", map.width);
+        computeMap.SetInt("_Height", map.height);
         computeMap.SetTexture(0, "_HeightMap", map);
         computeMap.SetTexture(1, "_HeightMap", map);
         computeMap.SetTexture(1, "_NormalMap", normals);

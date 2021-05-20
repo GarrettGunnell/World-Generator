@@ -39,6 +39,8 @@ public class DebugMaps : MonoBehaviour {
 
         mapGenerator.SetTexture(0, "_HeightMap", map);
         mapGenerator.SetInt("_Seed", seed);
+        mapGenerator.SetInt("_Height", map.height);
+        mapGenerator.SetInt("_Width", map.width);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         mapGenerator.Dispatch(0, threadGroupsX, threadGroupsY, 1);

@@ -4,6 +4,9 @@
 #include "Simplex.compute"
 
 uint _Seed;
+uint _Width;
+uint _Height;
+
 RWTexture2D<float4> _HeightMap;
 RWTexture2D<float4> _NormalMap;
 
@@ -32,16 +35,33 @@ void HeightMap(uint3 id : SV_DISPATCHTHREADID) {
 
 [numthreads(8,8,1)]
 void NormalMap(uint3 id : SV_DISPATCHTHREADID) {
-    float u1 = _HeightMap[id.xy - uint2(1, 0)].r;
-    float u2 = _HeightMap[id.xy + uint2(1, 0)].r;
+    float u1, u2, v1, v2;
 
-    float v1 = _HeightMap[id.xy - uint2(0, 1)].r;
-    float v2 = _HeightMap[id.xy + uint2(0, 1)].r;
+    if (id.x == 0)
+        u1 = max(0, fbm(uint3(id.x - 1, id.y, 1) + _Seed));
+    else
+        u1 = _HeightMap[id.xy - uint2(1, 0)].r;
+
+    if (id.x == _Width - 1)
+        u2 = max(0, fbm(uint3(id.x + 1, id.y, 1) + _Seed));
+    else
+        u2 = _HeightMap[id.xy + uint2(1, 0)].r;
+
+    if (id.y == 0)
+        v1 = max(0, fbm(uint3(id.x, id.y - 1, 1) + _Seed));
+    else
+        v1 = _HeightMap[id.xy - uint2(0, 1)].r;
+
+    if (id.y == _Height - 1)
+        v2 = max(0, fbm(uint3(id.x, id.y + 1, 1) + _Seed));
+    else
+        v2 = _HeightMap[id.xy + uint2(0, 1)].r;
 
     float3 normal = float3(u1 - u2, 1, v1 - v2);
 
+    normal = normalize(normal);
+
     normal.xyz = (normal.xyz + 1) / 2;
-
-
+    
     _NormalMap[id.xy] = float4(normal.x, normal.z, normal.y, 0);
 }
