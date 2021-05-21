@@ -34,17 +34,25 @@ float height(uint3 v) {
 
 [numthreads(8,8,1)]
 void HeightMap(uint3 id : SV_DISPATCHTHREADID) {
-    _HeightMap[id.xy] = height(id);
+    float h = height(id);
+    if (id.x == 0 || id.x == _Width - 1 || id.y == 0 || id.y == _Height - 1)
+        h = 0;
+
+    _HeightMap[id.xy] = h;
 }
 
 [numthreads(8,8,1)]
 void NormalMap(uint3 id : SV_DISPATCHTHREADID) {
-    float u1 = (id.x == 0)           ? height(id - uint3(1, 0, 0)) : _HeightMap[id.xy - uint2(1, 0)].r;
-    float u2 = (id.x == _Width - 1)  ? height(id + uint3(1, 0, 0)) : _HeightMap[id.xy + uint2(1, 0)].r;
-    float v1 = (id.y == 0)           ? height(id - uint3(0, 1, 0)) : _HeightMap[id.xy - uint2(0, 1)].r;
-    float v2 = (id.y == _Height - 1) ? height(id + uint3(0, 1, 0)) : _HeightMap[id.xy + uint2(0, 1)].r;
+    float u1 = (id.x == 1)           ? height(id - uint3(1, 0, 0)) : _HeightMap[id.xy - uint2(1, 0)].r;
+    float u2 = (id.x == _Width - 2)  ? height(id + uint3(1, 0, 0)) : _HeightMap[id.xy + uint2(1, 0)].r;
+    float v1 = (id.y == 1)           ? height(id - uint3(0, 1, 0)) : _HeightMap[id.xy - uint2(0, 1)].r;
+    float v2 = (id.y == _Height - 2) ? height(id + uint3(0, 1, 0)) : _HeightMap[id.xy + uint2(0, 1)].r;
 
     float3 normal = float3(u1 - u2, 1, v1 - v2);
+
+    if (id.x == 0 || id.x == _Width - 1 || id.y == 0 || id.y == _Height - 1)
+        normal = float3(0, 1, 0);
+
     normal = normalize(normal);
     normal.xyz = (normal.xyz + 1) / 2;
 
