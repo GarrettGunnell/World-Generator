@@ -5,7 +5,6 @@ Shader "Custom/Terrain" {
         _Albedo ("Albedo", Color) = (1, 1, 1)
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
-        [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "Normal Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 20000)) = 5
     }
 
@@ -64,7 +63,6 @@ Shader "Custom/Terrain" {
             #pragma fragment fp
 
             float3 _Albedo;
-            sampler2D _NormalMap;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
@@ -85,7 +83,6 @@ Shader "Custom/Terrain" {
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
                 float4 shadowCoords : TEXCOORD1;
-                float4 objectPos : TEXCOORD2;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -106,12 +103,7 @@ Shader "Custom/Terrain" {
                 
                 v.vertex.xyz += v.normal * displacement;
 
-                float3 gradient = tex2Dlod(_HeightMap, float4(v.uv, 0, 0)).yzw;
-                g.normal = float3(gradient.x, 1, gradient.y);
-
                 g.pos = UnityObjectToClipPos(v.vertex);
-                g.objectPos = v.vertex;
-                //g.normal = mul(unity_ObjectToWorld, v.normal);
                 g.normal = normalize(g.normal);
                 g.shadowCoords = v.vertex;
                 g.shadowCoords.xy = (float2(g.pos.x, -g.pos.y) + g.pos.w) * 0.5;
