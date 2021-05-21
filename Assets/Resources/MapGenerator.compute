@@ -10,7 +10,7 @@ uint _Height;
 RWTexture2D<float4> _HeightMap;
 RWTexture2D<float4> _NormalMap;
 
-float fbm(uint3 v) {
+float4 fbm(uint3 v) {
     int numOctaves = 16;
     float H = 1;
     
@@ -18,35 +18,36 @@ float fbm(uint3 v) {
     float frequency = 0.003;
     float amp = 1.0;
     float noise = 0;
+    float3 derivative = 0;
 
     for (int i = 0; i < numOctaves; ++i) {
-        noise += amp * snoise(v * frequency);
+        float4 n = snoise_grad(v * frequency);
+        noise += amp * n.w;
         frequency *= 2.0;
         amp *= G;
+
+        derivative += amp * n.xyz;
     }
 
-    return noise;
+    return float4(noise, derivative.xyz);
 }
 
-float height(uint3 v) {
-    return max(0, fbm(v + _Seed));
+float4 height(uint3 v) {
+    float4 h = fbm(v + _Seed);
+    return h.r >= 0.0 ? h : float4(0, 0, 0, 0);
 }
 
 [numthreads(8,8,1)]
 void HeightMap(uint3 id : SV_DISPATCHTHREADID) {
-    float h = height(id);
-    if (id.x == 0 || id.x == _Width - 1 || id.y == 0 || id.y == _Height - 1)
-        h = 0;
-
-    _HeightMap[id.xy] = h;
+    _HeightMap[id.xy] = height(id);
 }
 
 [numthreads(8,8,1)]
 void NormalMap(uint3 id : SV_DISPATCHTHREADID) {
-    float u1 = (id.x == 1)           ? height(id - uint3(1, 0, 0)) : _HeightMap[id.xy - uint2(1, 0)].r;
-    float u2 = (id.x == _Width - 2)  ? height(id + uint3(1, 0, 0)) : _HeightMap[id.xy + uint2(1, 0)].r;
-    float v1 = (id.y == 1)           ? height(id - uint3(0, 1, 0)) : _HeightMap[id.xy - uint2(0, 1)].r;
-    float v2 = (id.y == _Height - 2) ? height(id + uint3(0, 1, 0)) : _HeightMap[id.xy + uint2(0, 1)].r;
+    float u1 = (id.x == 1)           ? height(id - uint3(1, 0, 0)).x : _HeightMap[id.xy - uint2(1, 0)].r;
+    float u2 = (id.x == _Width - 2)  ? height(id + uint3(1, 0, 0)).x : _HeightMap[id.xy + uint2(1, 0)].r;
+    float v1 = (id.y == 1)           ? height(id - uint3(0, 1, 0)).x : _HeightMap[id.xy - uint2(0, 1)].r;
+    float v2 = (id.y == _Height - 2) ? height(id + uint3(0, 1, 0)).x : _HeightMap[id.xy + uint2(0, 1)].r;
 
     float3 normal = float3(u1 - u2, 1, v1 - v2);
 

@@ -85,6 +85,7 @@ Shader "Custom/Terrain" {
                 float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
                 float4 shadowCoords : TEXCOORD1;
+                float4 objectPos : TEXCOORD2;
             };
 
             TessellationControlPoint dummyvp(VertexData v) {
@@ -100,13 +101,17 @@ Shader "Custom/Terrain" {
             v2g vp(VertexData v) {
                 v2g g;
                 
-                float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0));
+                float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0)).r;
                 displacement = displacement * _DisplacementStrength;
                 
                 v.vertex.xyz += v.normal * displacement;
 
+                float3 gradient = tex2Dlod(_HeightMap, float4(v.uv, 0, 0)).yzw;
+                g.normal = float3(gradient.x, 1, gradient.y);
+
                 g.pos = UnityObjectToClipPos(v.vertex);
-                g.normal = mul(unity_ObjectToWorld, v.normal);
+                g.objectPos = v.vertex;
+                //g.normal = mul(unity_ObjectToWorld, v.normal);
                 g.normal = normalize(g.normal);
                 g.shadowCoords = v.vertex;
                 g.shadowCoords.xy = (float2(g.pos.x, -g.pos.y) + g.pos.w) * 0.5;
@@ -186,10 +191,10 @@ Shader "Custom/Terrain" {
                 float3 lightDir = _WorldSpaceLightPos0.xyz;
                 float attenuation = tex2D(_ShadowMapTexture, f.data.shadowCoords.xy / f.data.shadowCoords.w);
 
-                f.data.normal.xzy = tex2D(_NormalMap, f.data.uv).xyz;
-                f.data.normal = normalize(f.data.normal * 2 - 1);
+                float3 grad = tex2D(_HeightMap, f.data.uv).yzw;
+                float3 normal = normalize(float3(grad.x, 1, grad.y));
 
-                float normalContribution = DotClamped(lightDir, f.data.normal);
+                float normalContribution = DotClamped(lightDir, normal);
 
                 return _Albedo * attenuation * normalContribution;
             }
@@ -242,7 +247,7 @@ Shader "Custom/Terrain" {
 
             v2f vp(VertexData v) {
                 v2f f;
-                float displacement = tex2Dlod(_HeightMap, float4(v.uv.xy, 0, 0));
+                float displacement = tex2Dlod(_HeightMap, float4(v.uv.xy, 0, 0)).r;
                 displacement = displacement * _DisplacementStrength;
                 v.normal = normalize(v.normal);
                 v.vertex.xyz += v.normal * displacement;
