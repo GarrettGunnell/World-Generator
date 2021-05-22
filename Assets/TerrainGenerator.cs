@@ -6,19 +6,31 @@ public class TerrainGenerator : MonoBehaviour {
     public int height = 256;
     public int width = 256;
     public int seed;
+
+    [Range(1, 32)]
+    public int octaves = 16;
+    [Range(0.5f, 1)]
+    public float selfSimilarity = 1.0f;
+    [Range(0.0001f, 0.05f)]
+    public float frequency = 1.0f;
+    [Range(0.01f, 5.0f)]
+    public float amplitude = 1.0f;
+
     public bool updateMap;
     public bool exportMap;
     
     private RenderTexture map;
-    private RenderTexture normals;
     private ComputeShader computeMap;
 
     public void GenerateMap() {
         computeMap.SetInt("_Seed", seed);
+        computeMap.SetInt("_Octaves", octaves);
+        computeMap.SetFloat("_SelfSimilarity", selfSimilarity);
+        computeMap.SetFloat("_Frequency", frequency);
+        computeMap.SetFloat("_Amplitude", amplitude);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         computeMap.Dispatch(0, threadGroupsX, threadGroupsY, 1);
-        computeMap.Dispatch(1, threadGroupsX, threadGroupsY, 1);
     }
 
     private void Awake() {
@@ -30,23 +42,14 @@ public class TerrainGenerator : MonoBehaviour {
             map.Create();
         }
 
-        if (normals == null) {
-            normals = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            normals.enableRandomWrite = true;
-            normals.Create();
-        }
-
         computeMap = Resources.Load<ComputeShader>("MapGenerator");
         computeMap.SetInt("_Width", map.width);
         computeMap.SetInt("_Height", map.height);
         computeMap.SetTexture(0, "_HeightMap", map);
-        computeMap.SetTexture(1, "_HeightMap", map);
-        computeMap.SetTexture(1, "_NormalMap", normals);
 
 
         GenerateMap();
         GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_NormalMap", normals);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 10000, mesh.bounds.size.z));

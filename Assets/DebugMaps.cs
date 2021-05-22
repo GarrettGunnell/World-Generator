@@ -7,10 +7,7 @@ public class DebugMaps : MonoBehaviour {
     public bool updateMap = false;
     public bool exportMap = false;
 
-    public bool showNormalMap = false;
-
     private RenderTexture map;
-    private RenderTexture normals;
     public int seed;
 
     private void Awake() {
@@ -31,12 +28,6 @@ public class DebugMaps : MonoBehaviour {
             map.Create();
         }
 
-        if (normals == null) {
-            normals = new RenderTexture(source.width, source.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            normals.enableRandomWrite = true;
-            normals.Create();
-        }
-
         mapGenerator.SetTexture(0, "_HeightMap", map);
         mapGenerator.SetInt("_Seed", seed);
         mapGenerator.SetInt("_Height", map.height);
@@ -44,12 +35,8 @@ public class DebugMaps : MonoBehaviour {
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         mapGenerator.Dispatch(0, threadGroupsX, threadGroupsY, 1);
-
-        mapGenerator.SetTexture(1, "_HeightMap", map);
-        mapGenerator.SetTexture(1, "_NormalMap", normals);
-        mapGenerator.Dispatch(1, threadGroupsX, threadGroupsY, 1);
         
-        Graphics.Blit(showNormalMap ? normals : map, destination);
+        Graphics.Blit(map, destination);
     }
 
     private void LateUpdate() {
