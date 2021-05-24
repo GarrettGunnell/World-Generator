@@ -24,6 +24,7 @@ public class TerrainGenerator : MonoBehaviour {
     } public NormalCalculation normalCalculation;
 
     public bool updateMap;
+    public bool randomizeSeed;
     public bool exportMap;
     
     private RenderTexture map;
@@ -65,7 +66,8 @@ public class TerrainGenerator : MonoBehaviour {
 
     private void Update() {
         if (updateMap) {
-            seed = Random.Range(1, 1000000);
+            if (randomizeSeed)
+                seed = Random.Range(1, 1000000);
             GenerateMap();
             updateMap = false;
             GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
