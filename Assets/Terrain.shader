@@ -6,7 +6,7 @@ Shader "Custom/Terrain" {
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 20000)) = 5
-        _NormalStrength ("Normals Strength", Range(0.1, 2)) = 1
+        _NormalStrength ("Normals Strength", Range(0.1, 5)) = 1
     }
 
     CGINCLUDE

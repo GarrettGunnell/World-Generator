@@ -16,6 +16,13 @@ public class TerrainGenerator : MonoBehaviour {
     [Range(0.01f, 5.0f)]
     public float amplitude = 1.0f;
 
+    public enum NormalCalculation {
+        NoChange = 0,
+        AmplitudeMult,
+        FreqMult,
+        AmplitudeFreqMult
+    } public NormalCalculation normalCalculation;
+
     public bool updateMap;
     public bool exportMap;
     
@@ -28,13 +35,14 @@ public class TerrainGenerator : MonoBehaviour {
         computeMap.SetFloat("_SelfSimilarity", selfSimilarity);
         computeMap.SetFloat("_Frequency", frequency);
         computeMap.SetFloat("_Amplitude", amplitude);
+        computeMap.SetInt("_NormalCalculation", (int)normalCalculation);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         computeMap.Dispatch(0, threadGroupsX, threadGroupsY, 1);
     }
 
     private void Awake() {
-        seed = Random.Range(1, 1000000);
+        seed = Random.Range(1, 100000);
 
         if (map == null) {
             map = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
