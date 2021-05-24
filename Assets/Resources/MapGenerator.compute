@@ -33,13 +33,13 @@ float4 fbm(uint3 v) {
     float G = exp2(-_SelfSimilarity);
     float frequency = _Frequency;
     float amp = _Amplitude;
-    float noise = 0;
+    float noise = 0.5;
     float3 normal = 0;
-    float3 accumulated_derivative = 0;
+    float3 dsum = 0;
 
     for (int i = 0; i < _Octaves; ++i) {
-        float4 n = snoise_grad(float3(v) * frequency);
-        accumulated_derivative += n.xyz;
+        float4 n = snoise_grad(float3(v) * frequency) / (1.0 + dot(dsum, dsum));
+        dsum += n.xyz;
         normal += modifyNormal(n.xyz, amp, frequency);
         noise += amp * n.w;
         frequency *= 2.0;
