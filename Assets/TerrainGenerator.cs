@@ -19,7 +19,6 @@ public class TerrainGenerator : MonoBehaviour {
     public enum NormalCalculation {
         NoChange = 0,
         AmplitudeMult,
-        FreqMult,
         AmplitudeFreqMult
     } public NormalCalculation normalCalculation;
 

@@ -15,8 +15,7 @@ uint _NormalCalculation = 0;
 
 #define NO_CHANGE 0
 #define AMPLITUDE_MULT 1
-#define FREQ_MULT 2
-#define AMPLITUDE_FREQ_MULT 3
+#define AMPLITUDE_FREQ_MULT 2
 
 RWTexture2D<float4> _HeightMap;
 RWTexture2D<float4> _NormalMap;
@@ -24,8 +23,6 @@ RWTexture2D<float4> _NormalMap;
 float3 modifyNormal(float3 derivative, float amp, float freq) {
     if (_NormalCalculation == AMPLITUDE_MULT)
         return derivative * amp;
-    else if (_NormalCalculation == FREQ_MULT)
-        return derivative * freq;
     else if (_NormalCalculation == AMPLITUDE_FREQ_MULT)
         return derivative * amp * freq;
     else
