@@ -11,6 +11,7 @@ int _Octaves = 16;
 float _SelfSimilarity = 1.0;
 float _Frequency = 1.0;
 float _Amplitude = 1.0;
+float _Lacunarity = 2.0;
 uint _NormalCalculation = 0;
 
 #define NO_CHANGE 0
@@ -29,20 +30,20 @@ float3 modifyNormal(float3 derivative, float amp, float freq) {
         return derivative;
 }
 
-float4 fbm(uint3 v) {    
+float4 fbm(float3 v) {    
     float G = exp2(-_SelfSimilarity);
     float frequency = _Frequency;
     float amp = _Amplitude;
-    float noise = 0.5;
+    float noise = 0.0;
     float3 normal = 0;
     float3 dsum = 0;
 
     for (int i = 0; i < _Octaves; ++i) {
-        float4 n = snoise_grad(float3(v) * frequency) / (1.0 + dot(dsum, dsum));
+        float4 n = snoise_grad(v * frequency) / (1.0 + dot(dsum, dsum));
         dsum += n.xyz;
         normal += modifyNormal(n.xyz, amp, frequency);
         noise += amp * n.w;
-        frequency *= 2.0;
+        frequency *= _Lacunarity;
         amp *= G;
     }
 

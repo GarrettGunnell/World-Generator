@@ -15,6 +15,8 @@ public class TerrainGenerator : MonoBehaviour {
     public float frequency = 1.0f;
     [Range(0.01f, 5.0f)]
     public float amplitude = 1.0f;
+    [Range(0.1f, 3.0f)]
+    public float lacunarity = 2.0f;
 
     public enum NormalCalculation {
         NoChange = 0,
@@ -35,6 +37,7 @@ public class TerrainGenerator : MonoBehaviour {
         computeMap.SetFloat("_SelfSimilarity", selfSimilarity);
         computeMap.SetFloat("_Frequency", frequency);
         computeMap.SetFloat("_Amplitude", amplitude);
+        computeMap.SetFloat("_Lacunarity", lacunarity);
         computeMap.SetInt("_NormalCalculation", (int)normalCalculation);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
