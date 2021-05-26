@@ -146,7 +146,10 @@ MonoBehaviour:
   selfSimilarity: 1
   frequency: 0.003
   amplitude: 1
+  lacunarity: 2
+  normalCalculation: 0
   updateMap: 0
+  randomizeSeed: 0
   exportMap: 0
 --- !u!1 &705507993
 GameObject:
@@ -442,6 +445,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 9f7f2a054338faa4ba61952aee1b63ff,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 9f7f2a054338faa4ba61952aee1b63ff,
         type: 3}
