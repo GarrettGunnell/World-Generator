@@ -30,6 +30,10 @@ float3 modifyNormal(float3 derivative, float amp, float freq) {
         return derivative;
 }
 
+// Use flat plane to get a nice flat area that can be displaced by a really low frequency, low amplitude height map
+// Then, intersect the plane with a higher amplitude height map
+// Scan the two maps, and interpolate the intersections such that they smoothly transition
+
 float4 fbm(float3 v) {    
     float G = exp2(-_SelfSimilarity);
     float frequency = _Frequency;

@@ -2,7 +2,9 @@
 
 Shader "Custom/Terrain" {
     Properties {
-        _Albedo ("Albedo", Color) = (1, 1, 1)
+        _LowSlopeColor ("Low Slope Color", Color) = (1, 1, 1)
+        _HighSlopeColor ("High Slope Color", Color) = (1, 1, 1)
+        _SlopeThreshold ("Slope Threshold", Range(0.01, 1)) = 0.2
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
         _DisplacementStrength ("Displacement Strength", Range(0.1, 20000)) = 5
@@ -63,8 +65,8 @@ Shader "Custom/Terrain" {
             #pragma geometry gp
             #pragma fragment fp
 
-            float3 _Albedo;
-            float _NormalStrength;
+            float3 _LowSlopeColor, _HighSlopeColor;
+            float _NormalStrength, _SlopeThreshold;
 
             struct TessellationControlPoint {
                 float4 vertex : INTERNALTESSPOS;
@@ -188,12 +190,21 @@ Shader "Custom/Terrain" {
 
                 float3 grad = tex2D(_HeightMap, f.data.uv).yzw;
                 float3 normal = normalize(float3(grad.x, 1, grad.y));
-                normal.xz *= _NormalStrength;
                 normal = normalize(normal);
+                float slope = 1.0f - normal.y;
+
+                normal.xz *= _NormalStrength;
+                normal = normalize(float3(normal.x, 1, normal.z));
 
                 float normalContribution = DotClamped(lightDir, normal);
-
-                return _Albedo * attenuation * normalContribution;
+                float3 albedo;
+                
+                if (slope < _SlopeThreshold)
+                    albedo = lerp(_LowSlopeColor, _HighSlopeColor, slope / (_SlopeThreshold * 2));
+                else
+                    albedo = _HighSlopeColor;
+                
+                return albedo * attenuation * normalContribution;
             }
 
             ENDCG
