@@ -40,7 +40,7 @@ Shader "Custom/Terrain" {
             return TriangleIsBelowClipPlane(p0, p1, p2, 0, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 1, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 2, bias) ||
-                   TriangleIsBelowClipPlane(p0, p1, p2, 3, -0.9 * _DisplacementStrength);
+                   TriangleIsBelowClipPlane(p0, p1, p2, 3, -3 * _DisplacementStrength);
         }
     ENDCG
 
@@ -129,7 +129,7 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                float bias = -0.5 * _DisplacementStrength;
+                float bias = - _DisplacementStrength;
                 if (cullTriangle(p0, p1, p2, bias)) {
                     f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
                 } else {

@@ -17,12 +17,8 @@ public class TerrainGenerator : MonoBehaviour {
     public float amplitude = 1.0f;
     [Range(0.1f, 3.0f)]
     public float lacunarity = 2.0f;
-
-    public enum NormalCalculation {
-        NoChange = 0,
-        AmplitudeMult,
-        AmplitudeFreqMult
-    } public NormalCalculation normalCalculation;
+    [Range(0.0f, 3.0f)]
+    public float warp = 0.0f;
 
     public bool updateMap;
     public bool randomizeSeed;
@@ -38,7 +34,7 @@ public class TerrainGenerator : MonoBehaviour {
         computeMap.SetFloat("_Frequency", frequency);
         computeMap.SetFloat("_Amplitude", amplitude);
         computeMap.SetFloat("_Lacunarity", lacunarity);
-        computeMap.SetInt("_NormalCalculation", (int)normalCalculation);
+        computeMap.SetFloat("_Warp", warp);
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         computeMap.Dispatch(0, threadGroupsX, threadGroupsY, 1);
@@ -63,7 +59,7 @@ public class TerrainGenerator : MonoBehaviour {
         GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
 
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 10000, mesh.bounds.size.z));
+        mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 100000, mesh.bounds.size.z));
     }
 
     private void Update() {
