@@ -57,9 +57,17 @@ float4 height(uint3 v) {
     n.lacunarity = _Lacunarity;
     n.warp = _Warp;
 
+    NoiseSpecifications n2;
+    n2.pos = n.pos;
+    n2.octaves = _Octaves;
+    n2.gain = n.gain;
+    n2.frequency = _Frequency;
+    n2.amplitude = _Amplitude / 4;
+    n2.lacunarity = _Lacunarity;
+    n2.warp = _Warp;
 
     float4 h = fbm(n);
-    return h.x > 0 ? h : 0;
+    return h.x > 0 ? h : fbm(n2);
 }
 
 [numthreads(8,8,1)]
