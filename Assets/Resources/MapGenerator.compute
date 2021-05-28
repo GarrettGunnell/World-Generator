@@ -22,26 +22,43 @@ RWTexture2D<float4> _NormalMap;
 // Then, intersect the plane with a higher amplitude height map
 // Scan the two maps, and interpolate the intersections such that they smoothly transition
 
-float4 fbm(float3 v) {    
-    float G = exp2(-_SelfSimilarity);
-    float frequency = _Frequency;
-    float amp = _Amplitude;
+struct NoiseSpecifications {
+    float3 pos;
+    int octaves;
+    float gain;
+    float frequency;
+    float amplitude;
+    float lacunarity;
+    float warp;
+};
+
+float4 fbm(NoiseSpecifications specs) {    
     float noise = 0.0;
     float3 dsum = 0;
 
-    for (int i = 0; i < _Octaves; ++i) {
-        float4 n = snoise_grad((v + _Warp * dsum) * frequency) / (1.0 + dot(dsum, dsum));
+    for (int i = 0; i < specs.octaves; ++i) {
+        float4 n = snoise_grad((specs.pos + specs.warp * dsum) * specs.frequency) / (1.0 + dot(dsum, dsum));
         dsum += n.xyz;
-        noise += amp * n.w;
-        frequency *= _Lacunarity;
-        amp *= G;
+        noise += specs.amplitude * n.w;
+        specs.frequency *= specs.lacunarity;
+        specs.amplitude *= specs.gain;
     }
 
     return float4(noise, dsum);
 }
 
 float4 height(uint3 v) {
-    float4 h = fbm(float3(v.x, v.y, _Seed));
+    NoiseSpecifications n;
+    n.pos = float3(v.x, v.y, _Seed);
+    n.octaves = _Octaves;
+    n.gain = exp2(-_SelfSimilarity);
+    n.frequency = _Frequency;
+    n.amplitude = _Amplitude;
+    n.lacunarity = _Lacunarity;
+    n.warp = _Warp;
+
+
+    float4 h = fbm(n);
     return h.x > 0 ? h : 0;
 }
 
