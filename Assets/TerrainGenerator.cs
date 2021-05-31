@@ -19,6 +19,8 @@ public class TerrainGenerator : MonoBehaviour {
     public float lacunarity = 2.0f;
     [Range(0.0f, 3.0f)]
     public float warp = 0.0f;
+    [Range(0, 200)]
+    public float displacementStrength = 0.0f;
 
     public bool updateMap;
     public bool randomizeSeed;
@@ -70,6 +72,7 @@ public class TerrainGenerator : MonoBehaviour {
         displacePlane.SetBuffer(0, "_Vertices", vertBuffer);
         displacePlane.SetBuffer(0, "_UVs", uvBuffer);
         displacePlane.SetTexture(0, "_HeightMap", map);
+        displacePlane.SetFloat("_DisplacementStrength", displacementStrength);
         displacePlane.Dispatch(0, Mathf.CeilToInt(verts.Length / 128.0f), 1, 1);
 
         vertBuffer.GetData(verts);

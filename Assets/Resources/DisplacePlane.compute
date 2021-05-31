@@ -5,6 +5,8 @@ SamplerState sampler_HeightMap;
 RWStructuredBuffer<float3> _Vertices;
 StructuredBuffer<float2> _UVs;
 
+float _DisplacementStrength;
+
 [numthreads(128,1,1)]
 void DisplacePlane(uint3 id : SV_DispatchThreadID) {
     float3 vert = _Vertices[id.x];
@@ -12,5 +14,5 @@ void DisplacePlane(uint3 id : SV_DispatchThreadID) {
     float4 displacement = _HeightMap.SampleLevel(sampler_HeightMap, uv, 0);
 
 
-    _Vertices[id.x] = float3(vert.x, displacement.r * 200, vert.z);
+    _Vertices[id.x] = float3(vert.x, displacement.r * _DisplacementStrength, vert.z);
 }
