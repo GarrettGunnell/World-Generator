@@ -26,6 +26,7 @@ public class TerrainGenerator : MonoBehaviour {
     
     private RenderTexture map;
     private ComputeShader computeMap;
+    private ComputeShader displacePlane;
 
     public void GenerateMap() {
         computeMap.SetInt("_Seed", seed);
@@ -56,10 +57,29 @@ public class TerrainGenerator : MonoBehaviour {
 
 
         GenerateMap();
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
-
         Mesh mesh = GetComponent<MeshFilter>().mesh;
+        Vector3[] verts = mesh.vertices;
+        Vector2[] uvs = mesh.uv;
+
+        displacePlane = Resources.Load<ComputeShader>("DisplacePlane");
+        ComputeBuffer vertBuffer = new ComputeBuffer(verts.Length, 12);
+        ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Length, 8);
+        vertBuffer.SetData(verts);
+        uvBuffer.SetData(uvs);
+
+        displacePlane.SetBuffer(0, "_Vertices", vertBuffer);
+        displacePlane.SetBuffer(0, "_UVs", uvBuffer);
+        displacePlane.SetTexture(0, "_HeightMap", map);
+        displacePlane.Dispatch(0, Mathf.CeilToInt(verts.Length / 128.0f), 1, 1);
+
+        vertBuffer.GetData(verts);
+        vertBuffer.Release();
+        uvBuffer.Release();
+
+        mesh.vertices = verts;
         mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 100000, mesh.bounds.size.z));
+
+        GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
     }
 
     private void Update() {

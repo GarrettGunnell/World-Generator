@@ -1,0 +1,10 @@
+﻿#pragma kernel DisplacePlane
+
+Texture2D<float4> _HeightMap;
+RWStructuredBuffer<float3> _Vertices;
+StructuredBuffer<float2> _UVs;
+
+[numthreads(128,1,1)]
+void DisplacePlane(uint3 id : SV_DispatchThreadID) {
+    _Vertices[id.x] = float3(id);
+}
