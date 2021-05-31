@@ -13,6 +13,5 @@ void DisplacePlane(uint3 id : SV_DispatchThreadID) {
     float2 uv = _UVs[id.x];
     float4 displacement = _HeightMap.SampleLevel(sampler_HeightMap, uv, 0);
 
-
     _Vertices[id.x] = float3(vert.x, displacement.r * _DisplacementStrength, vert.z);
 }

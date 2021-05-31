@@ -70,8 +70,6 @@ public class TerrainGenerator : MonoBehaviour {
     }
 
     private void Awake() {
-        seed = Random.Range(1, 100000);
-
         if (map == null) {
             map = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
             map.enableRandomWrite = true;
@@ -84,6 +82,7 @@ public class TerrainGenerator : MonoBehaviour {
         computeMap.SetInt("_Height", map.height);
         computeMap.SetTexture(0, "_HeightMap", map);
 
+        seed = Random.Range(1, 100000);
         GenerateMap();
         DisplaceMesh();
     }
@@ -97,7 +96,4 @@ public class TerrainGenerator : MonoBehaviour {
             updateMap = false;
         }
     }
-
-
-
 }
