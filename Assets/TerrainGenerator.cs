@@ -41,29 +41,14 @@ public class TerrainGenerator : MonoBehaviour {
         int threadGroupsX = Mathf.CeilToInt(map.width / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(map.height / 8.0f);
         computeMap.Dispatch(0, threadGroupsX, threadGroupsY, 1);
+        GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
     }
 
-    private void Awake() {
-        seed = Random.Range(1, 100000);
-
-        if (map == null) {
-            map = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-            map.enableRandomWrite = true;
-            map.Create();
-        }
-
-        computeMap = Resources.Load<ComputeShader>("MapGenerator");
-        computeMap.SetInt("_Width", map.width);
-        computeMap.SetInt("_Height", map.height);
-        computeMap.SetTexture(0, "_HeightMap", map);
-
-
-        GenerateMap();
+    public void DisplaceMesh() {
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         Vector3[] verts = mesh.vertices;
         Vector2[] uvs = mesh.uv;
 
-        displacePlane = Resources.Load<ComputeShader>("DisplacePlane");
         ComputeBuffer vertBuffer = new ComputeBuffer(verts.Length, 12);
         ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Length, 8);
         vertBuffer.SetData(verts);
@@ -80,9 +65,27 @@ public class TerrainGenerator : MonoBehaviour {
         uvBuffer.Release();
 
         mesh.vertices = verts;
-        mesh.bounds = new Bounds(mesh.bounds.center, new Vector3(mesh.bounds.size.x, 100000, mesh.bounds.size.z));
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+    }
 
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
+    private void Awake() {
+        seed = Random.Range(1, 100000);
+
+        if (map == null) {
+            map = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            map.enableRandomWrite = true;
+            map.Create();
+        }
+
+        computeMap = Resources.Load<ComputeShader>("MapGenerator");
+        displacePlane = Resources.Load<ComputeShader>("DisplacePlane");
+        computeMap.SetInt("_Width", map.width);
+        computeMap.SetInt("_Height", map.height);
+        computeMap.SetTexture(0, "_HeightMap", map);
+
+        GenerateMap();
+        DisplaceMesh();
     }
 
     private void Update() {
@@ -90,8 +93,8 @@ public class TerrainGenerator : MonoBehaviour {
             if (randomizeSeed)
                 seed = Random.Range(1, 1000000);
             GenerateMap();
+            DisplaceMesh();
             updateMap = false;
-            GetComponent<Renderer>().sharedMaterial.SetTexture("_HeightMap", map);
         }
     }
 
