@@ -7,7 +7,7 @@ Shader "Custom/Terrain" {
         _SlopeThreshold ("Slope Threshold", Range(0.01, 1)) = 0.2
         _TessellationEdgeLength ("Tessellation Edge Length", Range(1, 100)) = 50
         [NoScaleOffset] _HeightMap ("Height Map", 2D) = "Height Map" {}
-        _DisplacementStrength ("Displacement Strength", Range(0.1, 200)) = 5
+        [HideInInspector] _DisplacementStrength ("Displacement Strength", Range(0.1, 200)) = 5
         _NormalStrength ("Normals Strength", Range(0.1, 10)) = 1
     }
 

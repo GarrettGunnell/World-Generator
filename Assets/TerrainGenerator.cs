@@ -59,6 +59,7 @@ public class TerrainGenerator : MonoBehaviour {
         displacePlane.SetTexture(0, "_HeightMap", map);
         displacePlane.SetFloat("_DisplacementStrength", displacementStrength);
         displacePlane.Dispatch(0, Mathf.CeilToInt(verts.Length / 128.0f), 1, 1);
+        GetComponent<Renderer>().sharedMaterial.SetFloat("_DisplacementStrength", displacementStrength);
 
         vertBuffer.GetData(verts);
         vertBuffer.Release();
