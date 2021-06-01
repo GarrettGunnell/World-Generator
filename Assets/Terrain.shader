@@ -103,9 +103,9 @@ Shader "Custom/Terrain" {
                 v2g g;
                 
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv, 0, 0)).r;
-                displacement = displacement * _DisplacementStrength;
+                float height = displacement * _DisplacementStrength;
                 
-                v.vertex.xyz += v.normal * displacement;
+                v.vertex.y = height;
 
                 g.pos = UnityObjectToClipPos(v.vertex);
                 g.normal = float3(0, 1, 0);
@@ -258,7 +258,7 @@ Shader "Custom/Terrain" {
                 float displacement = tex2Dlod(_HeightMap, float4(v.uv.xy, 0, 0)).r;
                 displacement = displacement * _DisplacementStrength;
                 v.normal = normalize(v.normal);
-                v.vertex.xyz += v.normal * displacement;
+                v.vertex.y = displacement;
 
                 f.pos = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
                 f.pos = UnityApplyLinearShadowBias(f.pos);
