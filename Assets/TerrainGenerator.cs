@@ -67,6 +67,10 @@ public class TerrainGenerator : MonoBehaviour {
         mesh.vertices = verts;
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+
+        MeshCollider mc = GetComponent<MeshCollider>();
+        mc.sharedMesh = null;
+        mc.sharedMesh = mesh;
     }
 
     private void Awake() {
