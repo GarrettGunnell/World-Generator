@@ -40,7 +40,7 @@ Shader "Custom/Terrain" {
             return TriangleIsBelowClipPlane(p0, p1, p2, 0, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 1, bias) ||
                    TriangleIsBelowClipPlane(p0, p1, p2, 2, bias) ||
-                   TriangleIsBelowClipPlane(p0, p1, p2, 3, -3 * _DisplacementStrength);
+                   TriangleIsBelowClipPlane(p0, p1, p2, 3, -_DisplacementStrength);
         }
     ENDCG
 
@@ -108,8 +108,7 @@ Shader "Custom/Terrain" {
                 v.vertex.y = height;
 
                 g.pos = UnityObjectToClipPos(v.vertex);
-                g.normal = float3(0, 1, 0);
-                g.normal = normalize(g.normal);
+                g.normal = UnityObjectToWorldNormal(normalize(v.normal));
                 g.shadowCoords = v.vertex;
                 g.shadowCoords.xy = (float2(g.pos.x, -g.pos.y) + g.pos.w) * 0.5;
                 g.shadowCoords.zw = g.pos.zw;
@@ -129,7 +128,7 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                float bias = - _DisplacementStrength;
+                float bias = -0.5 * _DisplacementStrength;
                 if (cullTriangle(p0, p1, p2, bias)) {
                     f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
                 } else {
@@ -190,8 +189,12 @@ Shader "Custom/Terrain" {
 
                 float3 grad = tex2D(_HeightMap, f.data.uv).yzw;
                 float3 normal = normalize(float3(grad.x, 1, grad.y));
-                normal = normalize(normal);
-                float slope = 1.0f - normal.y;
+
+                f.data.normal.xz *= 2.0f;
+                float3 centralDifference = normalize(f.data.normal);
+                float3 gradientCentralDifferenceBlend = normalize(float3(normal.xy + centralDifference.xy, normal.z * centralDifference.z));
+
+                float slope = 1.0f - gradientCentralDifferenceBlend.y;
 
                 normal.xz *= _NormalStrength;
                 normal = normalize(float3(normal.x, 1, normal.z));
@@ -273,12 +276,12 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                    f.edge[0] = TessellationHeuristic(p1, p2);
-                    f.edge[1] = TessellationHeuristic(p2, p0);
-                    f.edge[2] = TessellationHeuristic(p0, p1);
-                    f.inside = (TessellationHeuristic(p1, p2) +
-                                TessellationHeuristic(p2, p0) +
-                                TessellationHeuristic(p1, p2)) * (1 / 3.0);
+                f.edge[0] = TessellationHeuristic(p1, p2);
+                f.edge[1] = TessellationHeuristic(p2, p0);
+                f.edge[2] = TessellationHeuristic(p0, p1);
+                f.inside = (TessellationHeuristic(p1, p2) +
+                            TessellationHeuristic(p2, p0) +
+                            TessellationHeuristic(p1, p2)) * (1 / 3.0);
                 
                 return f;
             }
