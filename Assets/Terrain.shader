@@ -276,13 +276,17 @@ Shader "Custom/Terrain" {
                 float3 p2 = mul(unity_ObjectToWorld, patch[2].vertex);
 
                 TessellationFactors f;
-                f.edge[0] = TessellationHeuristic(p1, p2);
-                f.edge[1] = TessellationHeuristic(p2, p0);
-                f.edge[2] = TessellationHeuristic(p0, p1);
-                f.inside = (TessellationHeuristic(p1, p2) +
-                            TessellationHeuristic(p2, p0) +
-                            TessellationHeuristic(p1, p2)) * (1 / 3.0);
-                
+                float bias = -0.5 * _DisplacementStrength;
+                if (cullTriangle(p0, p1, p2, bias)) {
+                    f.edge[0] = f.edge[1] = f.edge[2] = f.inside = 0;
+                } else {
+                    f.edge[0] = TessellationHeuristic(p1, p2);
+                    f.edge[1] = TessellationHeuristic(p2, p0);
+                    f.edge[2] = TessellationHeuristic(p0, p1);
+                    f.inside = (TessellationHeuristic(p1, p2) +
+                                TessellationHeuristic(p2, p0) +
+                                TessellationHeuristic(p1, p2)) * (1 / 3.0);
+                }
                 return f;
             }
 
