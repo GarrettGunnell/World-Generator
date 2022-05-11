@@ -11,11 +11,7 @@ by Garrett Gunnell
 ### Examples
 
 Terrain: <br>
-![Terrain](https://puu.sh/HLN5w.png)
-
-Map: <br>
-![Height Map](https://puu.sh/HLNF5.png)
-Displacement value is in the red channel, while the *x* and *z* components of the gradient are stored in the green and blue channels such that the normal can be reconstructed in the shader.
+![Terrain](./Examples/example.png)
 
 ### Resources
 https://iquilezles.org/www/index.htm <br>
